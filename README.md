@@ -69,4 +69,8 @@ xcodebuild -project atlas.xcodeproj -scheme atlas -destination 'platform=iOS Sim
 
 ## License
 
-[Add your license here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Code of Conduct
+
+This project adheres to the Contributor Covenant [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
