@@ -33,9 +33,22 @@
 		09C76E922DF7954700BC25DB /* atlasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atlasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		09C76EAC2DFA445D00BC25DB /* Exceptions for "atlas" folder in "atlas" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 09C76E792DF7954600BC25DB /* atlas */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		09C76E7C2DF7954600BC25DB /* atlas */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				09C76EAC2DFA445D00BC25DB /* Exceptions for "atlas" folder in "atlas" target */,
+			);
 			path = atlas;
 			sourceTree = "<group>";
 		};
@@ -406,6 +419,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = atlas/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -445,6 +460,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = atlas/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
