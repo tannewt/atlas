@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		09C76EA72DF795EB00BC25DB /* Valhalla in Frameworks */ = {isa = PBXBuildFile; productRef = 09C76EA62DF795EB00BC25DB /* Valhalla */; };
+		09C76EB32DFCC42200BC25DB /* ValhallaConfigModels in Frameworks */ = {isa = PBXBuildFile; productRef = 09C76EB22DFCC42200BC25DB /* ValhallaConfigModels */; };
+		09C76EB52DFCC42200BC25DB /* ValhallaModels in Frameworks */ = {isa = PBXBuildFile; productRef = 09C76EB42DFCC42200BC25DB /* ValhallaModels */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,7 +71,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				09C76EB52DFCC42200BC25DB /* ValhallaModels in Frameworks */,
 				09C76EA72DF795EB00BC25DB /* Valhalla in Frameworks */,
+				09C76EB32DFCC42200BC25DB /* ValhallaConfigModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +135,8 @@
 			name = atlas;
 			packageProductDependencies = (
 				09C76EA62DF795EB00BC25DB /* Valhalla */,
+				09C76EB22DFCC42200BC25DB /* ValhallaConfigModels */,
+				09C76EB42DFCC42200BC25DB /* ValhallaModels */,
 			);
 			productName = atlas;
 			productReference = 09C76E7A2DF7954600BC25DB /* atlas.app */;
@@ -216,6 +222,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				09C76EA52DF795EB00BC25DB /* XCLocalSwiftPackageReference "../valhalla-mobile" */,
+				09C76EB12DFCC42100BC25DB /* XCLocalSwiftPackageReference "../valhalla-openapi-models-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 09C76E7B2DF7954600BC25DB /* Products */;
@@ -625,12 +632,24 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../valhalla-mobile";
 		};
+		09C76EB12DFCC42100BC25DB /* XCLocalSwiftPackageReference "../valhalla-openapi-models-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../valhalla-openapi-models-swift";
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		09C76EA62DF795EB00BC25DB /* Valhalla */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Valhalla;
+		};
+		09C76EB22DFCC42200BC25DB /* ValhallaConfigModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ValhallaConfigModels;
+		};
+		09C76EB42DFCC42200BC25DB /* ValhallaModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ValhallaModels;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

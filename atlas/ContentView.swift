@@ -17,12 +17,38 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published var recentLocations: [CLLocation] = []
     
+    // Test coordinates temporarily replacing live GPS
+    private let testCoordinates = [
+        (47.67327532420298, -122.38482069148498),
+        (47.67326248046436, -122.38481523645135),
+        (47.673246981674815, -122.38481710747024),
+        (47.67323431487764, -122.38481102275948),
+        (47.67321896106685, -122.38481719916645),
+        (47.673204776431334, -122.38480377727599),
+        (47.67319307481996, -122.38480326673842),
+        (47.67318412615767, -122.38481887379062),
+        (47.673171402564854, -122.38481686617965),
+        (47.67315869744424, -122.38482143130629),
+        (47.67314375025051, -122.38481791277368),
+        (47.67312791238873, -122.38482285980876),
+        (47.67311654307077, -122.38482456842144),
+        (47.67310305210005, -122.38483168912074),
+        (47.67309213606241, -122.38483367129723)
+    ]
+    private var testIndex = 0
+    private var testTimer: Timer?
+    
     override init() {
         super.init()
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         authorizationStatus = locationManager.authorizationStatus
-        requestLocationPermission()
+        
+        // Comment out live GPS for testing
+        // requestLocationPermission()
+        
+        // Start test coordinate simulation
+        startTestLocationUpdates()
     }
     
     func requestLocationPermission() {
@@ -45,8 +71,38 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.startUpdatingLocation()
     }
     
+    // Test location simulation
+    func startTestLocationUpdates() {
+        testTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
+            self.simulateNextLocation()
+        }
+        // Send first location immediately
+        simulateNextLocation()
+    }
+    
+    func simulateNextLocation() {
+        guard testIndex < testCoordinates.count else {
+            testTimer?.invalidate()
+            return
+        }
+        
+        let coord = testCoordinates[testIndex]
+        let testLocation = CLLocation(latitude: coord.0, longitude: coord.1)
+        
+        location = testLocation
+        recentLocations.append(testLocation)
+        if recentLocations.count > 15 {
+            recentLocations.removeFirst()
+        }
+        
+        onLocationUpdate?(testLocation)
+        testIndex += 1
+    }
+    
     var onLocationUpdate: ((CLLocation) -> Void)?
     
+    // Commented out for test coordinates
+    /*
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let newLocation = locations.last {
             location = newLocation
@@ -65,6 +121,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         authorizationStatus = status
         requestLocationPermission()
     }
+    */
 }
 
 struct ContentView: View {

@@ -1,5 +1,5 @@
 {
-  "originHash" : "2802a9687985acfadf82d51e2608e1924eddbe7c0abf0af8000d6e054cdebdca",
+  "originHash" : "9451aae59ece26b54ff359f9845e2157c24d44b98b93dd93ab257d300d4ef34f",
   "pins" : [
     {
       "identity" : "anycodable",
@@ -17,15 +17,6 @@
       "state" : {
         "revision" : "fcff1f1b82373ea64b9565a364f63ffe7fdecf9f",
         "version" : "1.0.4"
-      }
-    },
-    {
-      "identity" : "valhalla-openapi-models-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Rallista/valhalla-openapi-models-swift.git",
-      "state" : {
-        "revision" : "8315c199bd0e5c20a375ec27e8423654d6001879",
-        "version" : "0.0.4"
       }
     }
   ],
