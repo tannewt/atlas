@@ -15,6 +15,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
     @Published var location: CLLocation?
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
+    @Published var recentLocations: [CLLocation] = []
     
     override init() {
         super.init()
@@ -49,6 +50,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let newLocation = locations.last {
             location = newLocation
+            
+            // Keep track of last 15 locations
+            recentLocations.append(newLocation)
+            if recentLocations.count > 15 {
+                recentLocations.removeFirst()
+            }
+            
             onLocationUpdate?(newLocation)
         }
     }
@@ -61,6 +69,8 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 struct ContentView: View {
     @State private var routeResult: String = "Getting location..."
+    @State private var traceResult: String = "Waiting for GPS locations..."
+    @State private var recentPointsText: String = "No GPS points yet..."
     @State private var isLoading: Bool = false
     @StateObject private var locationManager = LocationManager()
     
@@ -75,12 +85,50 @@ struct ContentView: View {
                 .fontWeight(.bold)
             
             ScrollView {
-                Text(routeResult)
-                    .font(.system(.body, design: .monospaced))
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                VStack(spacing: 10) {
+                    Text("Route Information:")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(routeResult)
+                        .font(.system(.body, design: .monospaced))
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                    
+                    Text("Trace Attributes:")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(traceResult)
+                        .font(.system(.body, design: .monospaced))
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    
+                    HStack {
+                        Text("Recent GPS Points (for debugging):")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        Button("Copy") {
+                            UIPasteboard.general.string = recentPointsText
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(recentPointsText.isEmpty || recentPointsText == "No GPS points yet...")
+                    }
+                    
+                    TextField("Recent GPS points...", text: $recentPointsText, axis: .vertical)
+                        .font(.system(.caption, design: .monospaced))
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(8)
+                        .lineLimit(10, reservesSpace: true)
+                }
             }
         }
         .padding()
@@ -88,8 +136,19 @@ struct ContentView: View {
             locationManager.onLocationUpdate = { location in
                 Task {
                     await testValhallaRoute(from: location)
+                    await testTraceAttributes()
+                    await updateRecentPointsText()
                 }
             }
+        }
+    }
+    
+    private func updateRecentPointsText() async {
+        await MainActor.run {
+            let points = locationManager.recentLocations.map { location in
+                "(\(location.coordinate.latitude), \(location.coordinate.longitude))"
+            }
+            recentPointsText = "[\n" + points.joined(separator: ",\n") + "\n]"
         }
     }
     
@@ -128,6 +187,79 @@ struct ContentView: View {
         } catch {
             await MainActor.run {
                 routeResult = "Error: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    private func testTraceAttributes() async {
+        do {
+            // Create a basic Valhalla config
+            let config = try ValhallaConfig(tileExtractTar: Bundle.main.url(forResource: "valhalla_tiles", withExtension: "tar")!)
+            
+            // Initialize Valhalla
+            let valhalla = try Valhalla(config)
+            
+            // Use last 15 GPS locations instead of hardcoded waypoints
+            let waypoints = locationManager.recentLocations.map { location in
+                MapMatchWaypoint(lat: location.coordinate.latitude, lon: location.coordinate.longitude)
+            }
+            
+            // Need at least 2 locations for trace attributes
+            guard waypoints.count >= 2 else {
+                await MainActor.run {
+                    traceResult = "Need at least 2 GPS locations for trace attributes (\(waypoints.count)/2)"
+                }
+                return
+            }
+            
+            // Create trace attributes request
+            let request = TraceAttributesRequest(
+                shape: waypoints,
+                costing: .auto
+            )
+            
+            // Get trace attributes
+            let response = try valhalla.traceAttributes(request: request)
+            
+            await MainActor.run {
+                var result = "Trace Attributes (\(waypoints.count) locations):\n"
+                result += "Match confidence: \(String(format: "%.2f", response.confidenceScore ?? 0))\n"
+                result += "Matched points: \(response.matchedPoints?.count ?? 0)\n"
+                result += "Road segments: \(response.edges?.count ?? 0)\n\n"
+                
+                if let edges = response.edges?.prefix(3) {
+                    result += "Recent road segments:\n"
+                    for (index, edge) in edges.enumerated() {
+                        result += "\(index + 1). "
+                        if let names = edge.names, !names.isEmpty {
+                            result += "\(names.joined(separator: ", "))"
+                        } else {
+                            result += "Unnamed road"
+                        }
+                        
+                        if let length = edge.length {
+                            result += " (\(String(format: "%.2f", length)) mi)"
+                        }
+                        
+                        if let speed = edge.speed {
+                            result += " \(speed) mph"
+                        }
+                        
+                        if let speedLimit = edge.speedLimit {
+                            result += " (limit: \(speedLimit) mph)"
+                        }
+                        
+                        result += "\n"
+                    }
+                }
+                
+                result += "\nUpdated: \(Date().formatted(date: .omitted, time: .standard))"
+                traceResult = result
+            }
+            
+        } catch {
+            await MainActor.run {
+                traceResult = "Trace Error: \(error.localizedDescription)"
             }
         }
     }
