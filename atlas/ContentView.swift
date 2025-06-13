@@ -129,10 +129,21 @@ struct ContentView: View {
     @State private var traceResult: String = "Waiting for GPS locations..."
     @State private var recentPointsText: String = "No GPS points yet..."
     @State private var isLoading: Bool = false
+    @State private var isWalkingMode: Bool = false
     @StateObject private var locationManager = LocationManager()
     
     var body: some View {
         VStack(spacing: 20) {
+            HStack {
+                Text("Auto")
+                    .foregroundColor(isWalkingMode ? .secondary : .primary)
+                Toggle("", isOn: $isWalkingMode)
+                    .labelsHidden()
+                Text("Walking")
+                    .foregroundColor(isWalkingMode ? .primary : .secondary)
+            }
+            .padding(.horizontal)
+            
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
@@ -223,7 +234,7 @@ struct ContentView: View {
                     RoutingWaypoint(lat: location.coordinate.latitude, lon: location.coordinate.longitude, radius: 100), // Current GPS location
                     RoutingWaypoint(lat: 47.669553, lon: -122.363616, radius: 100)  // Daycare
                 ],
-                costing: .auto,
+                costing: isWalkingMode ? .pedestrian : .auto,
                 directionsOptions: DirectionsOptions(units: .mi)
             )
             
@@ -272,7 +283,7 @@ struct ContentView: View {
             // Create trace attributes request
             let request = TraceAttributesRequest(
                 shape: waypoints,
-                costing: .auto
+                costing: isWalkingMode ? .pedestrian : .auto
             )
             
             // Get trace attributes
