@@ -33,6 +33,7 @@
 		09C76E7A2DF7954600BC25DB /* atlas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = atlas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		09C76E882DF7954700BC25DB /* atlasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atlasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		09C76E922DF7954700BC25DB /* atlasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atlasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		09C76EBC2E012F1800BC25DB /* 2025-06-15 AM 11_38_07.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "2025-06-15 AM 11_38_07.gpx"; path = "../../2025-06-15 AM 11_38_07.gpx"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -97,6 +98,7 @@
 		09C76E712DF7954600BC25DB = {
 			isa = PBXGroup;
 			children = (
+				09C76EBC2E012F1800BC25DB /* 2025-06-15 AM 11_38_07.gpx */,
 				09C76E7C2DF7954600BC25DB /* atlas */,
 				09C76E8B2DF7954700BC25DB /* atlasTests */,
 				09C76E952DF7954700BC25DB /* atlasUITests */,
