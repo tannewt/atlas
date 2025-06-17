@@ -131,6 +131,7 @@ struct ContentView: View {
     @State private var isLoading: Bool = false
     @State private var isWalkingMode: Bool = false
     @StateObject private var locationManager = LocationManager()
+    @State private var valhalla: Valhalla?
     
     var body: some View {
         VStack(spacing: 20) {
@@ -201,12 +202,28 @@ struct ContentView: View {
         }
         .padding()
         .onAppear {
+            Task {
+                await initializeValhalla()
+            }
+            
             locationManager.onLocationUpdate = { location in
                 Task {
                     await testValhallaRoute(from: location)
                     await testTraceAttributes()
                     await updateRecentPointsText()
                 }
+            }
+        }
+    }
+    
+    private func initializeValhalla() async {
+        do {
+            let config = try ValhallaConfig(tileExtractTar: Bundle.main.url(forResource: "valhalla_tiles", withExtension: "tar")!)
+            valhalla = try Valhalla(config)
+        } catch {
+            await MainActor.run {
+                routeResult = "Failed to initialize Valhalla: \(error.localizedDescription)"
+                traceResult = "Failed to initialize Valhalla: \(error.localizedDescription)"
             }
         }
     }
@@ -221,12 +238,14 @@ struct ContentView: View {
     }
     
     private func testValhallaRoute(from location: CLLocation) async {
+        guard let valhalla = valhalla else {
+            await MainActor.run {
+                routeResult = "Valhalla not initialized"
+            }
+            return
+        }
+        
         do {
-            // Create a basic Valhalla config (you'll need proper tiles for real routing)
-            let config = try ValhallaConfig(tileExtractTar: Bundle.main.url(forResource: "valhalla_tiles", withExtension: "tar")!)
-            
-            // Initialize Valhalla
-            let valhalla = try Valhalla(config)
             
             // Create a route request from current location to daycare
             let request = RouteRequest(
@@ -260,12 +279,14 @@ struct ContentView: View {
     }
     
     private func testTraceAttributes() async {
+        guard let valhalla = valhalla else {
+            await MainActor.run {
+                traceResult = "Valhalla not initialized"
+            }
+            return
+        }
+        
         do {
-            // Create a basic Valhalla config
-            let config = try ValhallaConfig(tileExtractTar: Bundle.main.url(forResource: "valhalla_tiles", withExtension: "tar")!)
-            
-            // Initialize Valhalla
-            let valhalla = try Valhalla(config)
             
             // Use last 15 GPS locations instead of hardcoded waypoints
             let waypoints = locationManager.recentLocations.map { location in
