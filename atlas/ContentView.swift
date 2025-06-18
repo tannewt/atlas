@@ -75,10 +75,78 @@ struct ContentView: View {
     @State private var recentPointsText: String = "No GPS points yet..."
     @State private var isLoading: Bool = false
     @State private var isWalkingMode: Bool = false
+    @State private var showDebugView: Bool = false
+    @State private var schematicData: SchematicMapData?
     @StateObject private var locationManager = LocationManager()
     @State private var valhalla: Valhalla?
     
     var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                if showDebugView {
+                    debugView
+                } else {
+                    mainView
+                }
+            }
+            .navigationTitle("Atlas")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button(showDebugView ? "Show Map" : "Show Debug") {
+                            showDebugView.toggle()
+                        }
+                        
+                        Divider()
+                        
+                        HStack {
+                            Text("Auto")
+                            Toggle("", isOn: $isWalkingMode)
+                                .labelsHidden()
+                            Text("Walking")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+            }
+        }
+        .onAppear {
+            Task {
+                await initializeValhalla()
+            }
+            
+            locationManager.onLocationUpdate = { location in
+                Task {
+                    await testValhallaRoute(from: location)
+                    await testTraceAttributes()
+                    await updateRecentPointsText()
+                    await updateSchematicData()
+                }
+            }
+        }
+    }
+    
+    private var mainView: some View {
+        VStack(spacing: 10) {
+            if let schematicData = schematicData {
+                SchematicMapView(schematicData: schematicData)
+                    .frame(maxHeight: .infinity)
+            } else {
+                VStack {
+                    Image(systemName: "location")
+                        .imageScale(.large)
+                        .foregroundStyle(.secondary)
+                    Text("Getting GPS location...")
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxHeight: .infinity)
+            }
+        }
+    }
+    
+    private var debugView: some View {
         VStack(spacing: 20) {
             HStack {
                 Text("Auto")
@@ -146,19 +214,6 @@ struct ContentView: View {
             }
         }
         .padding()
-        .onAppear {
-            Task {
-                await initializeValhalla()
-            }
-            
-            locationManager.onLocationUpdate = { location in
-                Task {
-                    await testValhallaRoute(from: location)
-                    await testTraceAttributes()
-                    await updateRecentPointsText()
-                }
-            }
-        }
     }
     
     private func initializeValhalla() async {
@@ -295,6 +350,61 @@ struct ContentView: View {
             await MainActor.run {
                 traceResult = "Trace Error: \(error.localizedDescription)"
             }
+        }
+    }
+    
+    private func updateSchematicData() async {
+        guard let valhalla = valhalla else { return }
+        
+        do {
+            let waypoints = locationManager.recentLocations.map { location in
+                MapMatchWaypoint(lat: location.coordinate.latitude, lon: location.coordinate.longitude)
+            }
+            
+            guard waypoints.count >= 2 else { return }
+            
+            let request = TraceAttributesRequest(
+                shape: waypoints,
+                costing: isWalkingMode ? .pedestrian : .auto
+            )
+            
+            let response = try valhalla.traceAttributes(request: request)
+            
+            await MainActor.run {
+                // Convert trace attributes to SchematicMapData
+                let currentRoadName = response.edges?.first?.names?.first ?? "Unknown Road"
+                
+                // Create cross streets from edges data
+                var crossStreets: [CrossStreetIntersection] = []
+                
+                if let edges = response.edges {
+                    var currentDistance: Double = 0
+                    
+                    for (index, edge) in edges.enumerated() {
+                        if index > 0, let edgeLength = edge.length {
+                            currentDistance += edgeLength * 1609.34 // Convert miles to meters
+                            
+                            if let names = edge.names, !names.isEmpty {
+                                let intersection = CrossStreetIntersection(
+                                    distanceAhead: currentDistance,
+                                    streets: names.map { name in
+                                        CrossStreet(name: name, heading: Double.random(in: -90...90))
+                                    }
+                                )
+                                crossStreets.append(intersection)
+                            }
+                        }
+                    }
+                }
+                
+                schematicData = SchematicMapData(
+                    currentRoad: currentRoadName,
+                    crossStreets: Array(crossStreets.prefix(5)) // Limit to 5 upcoming intersections
+                )
+            }
+            
+        } catch {
+            // Silent fail for schematic data updates
         }
     }
 }

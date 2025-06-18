@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SchematicMapView: View {
-    let previewData = SchematicMapData.preview
+    let schematicData: SchematicMapData
     
     var body: some View {
         GeometryReader { geometry in
@@ -13,7 +13,7 @@ struct SchematicMapView: View {
                     Spacer()
                     
                     // Cross streets above current position
-                    ForEach(previewData.crossStreets.reversed().filter { $0.distanceAhead > 0 }, id: \.distanceAhead) { intersection in
+                    ForEach(schematicData.crossStreets.reversed().filter { $0.distanceAhead > 0 }, id: \.distanceAhead) { intersection in
                         CrossStreetIntersectionRowView(intersection: intersection)
                     }
                     
@@ -38,13 +38,13 @@ struct SchematicMapView: View {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(Color.blue)
                             .frame(width: 8)
-                        Text(previewData.currentRoad)
+                        Text(schematicData.currentRoad)
                             .font(.headline)
                             .fontWeight(.semibold)
                     }
                 
                     // Cross streets below current position
-                    ForEach(previewData.crossStreets.filter { $0.distanceAhead <= 0 }, id: \.distanceAhead) { intersection in
+                    ForEach(schematicData.crossStreets.filter { $0.distanceAhead <= 0 }, id: \.distanceAhead) { intersection in
                         CrossStreetIntersectionRowView(intersection: intersection)
                     }
                 }
@@ -53,7 +53,7 @@ struct SchematicMapView: View {
                 // Landscape layout: HStack with cross streets and main road
                 HStack() {
                     // Cross streets to the left
-                    ForEach(previewData.crossStreets.filter { $0.distanceAhead < 0 }, id: \.distanceAhead) { intersection in
+                    ForEach(schematicData.crossStreets.filter { $0.distanceAhead < 0 }, id: \.distanceAhead) { intersection in
                         CrossStreetIntersectionColumnView(intersection: intersection)
                     }
                     
@@ -84,7 +84,7 @@ struct SchematicMapView: View {
                             }
                             
                             HStack {
-                                Text(previewData.currentRoad)
+                                Text(schematicData.currentRoad)
                                     .font(.headline)
                                     .fontWeight(.semibold)
                                 Spacer()
@@ -95,7 +95,7 @@ struct SchematicMapView: View {
                     }
                     
                     // Cross streets to the right
-                    ForEach(previewData.crossStreets.filter { $0.distanceAhead >= 0 }, id: \.distanceAhead) { intersection in
+                    ForEach(schematicData.crossStreets.filter { $0.distanceAhead >= 0 }, id: \.distanceAhead) { intersection in
                         CrossStreetIntersectionColumnView(intersection: intersection)
                     }
                     Spacer()
@@ -178,15 +178,9 @@ struct CrossStreetIntersectionColumnView: View {
             // Top labels
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.name) { street in
-                    VStack(spacing: 4) {
                         Text(street.name)
                             .font(.caption)
                             .fontWeight(.medium)
-                        
-                        Image(systemName: headingArrowIcon(for: street.heading))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
                 }
             }
             .frame(maxHeight: .infinity, alignment: .bottom)
@@ -205,41 +199,12 @@ struct CrossStreetIntersectionColumnView: View {
             // Bottom labels
             HStack(alignment: .top, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.name) { street in
-                    VStack(spacing: 4) {
-                        Image(systemName: headingArrowIcon(for: street.heading))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                        
                         Text(street.name)
                             .font(.caption)
                             .fontWeight(.medium)
-                    }
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
-        }
-    }
-    
-    private func headingArrowIcon(for heading: Double) -> String {
-        switch heading {
-        case -180..<(-135): return "arrow.down"
-        case -135..<(-45): return "arrow.down.left"  
-        case -45..<45: return "arrow.left"
-        case 45..<135: return "arrow.up.left"
-        case 135..<180: return "arrow.up"
-        case -90: return "arrow.left"
-        case 0: return "arrow.up"
-        case 90: return "arrow.right"
-        default:
-            if heading > 0 && heading < 90 {
-                return "arrow.up.right"
-            } else if heading > -90 && heading < 0 {
-                return "arrow.up.left"
-            } else if heading > 90 && heading < 180 {
-                return "arrow.up.right"
-            } else {
-                return "arrow.up"
-            }
         }
     }
 }
@@ -286,6 +251,6 @@ struct SchematicMapData {
 }
 
 #Preview {
-    SchematicMapView()
+    SchematicMapView(schematicData: SchematicMapData.preview)
         .padding()
 }
