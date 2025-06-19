@@ -10,6 +10,7 @@
 		09C76EA72DF795EB00BC25DB /* Valhalla in Frameworks */ = {isa = PBXBuildFile; productRef = 09C76EA62DF795EB00BC25DB /* Valhalla */; };
 		09C76EB32DFCC42200BC25DB /* ValhallaConfigModels in Frameworks */ = {isa = PBXBuildFile; productRef = 09C76EB22DFCC42200BC25DB /* ValhallaConfigModels */; };
 		09C76EB52DFCC42200BC25DB /* ValhallaModels in Frameworks */ = {isa = PBXBuildFile; productRef = 09C76EB42DFCC42200BC25DB /* ValhallaModels */; };
+		09C76EC02E03882D00BC25DB /* 2025-06-15 AM 11_38_07_waypoints.gpx in Resources */ = {isa = PBXBuildFile; fileRef = 09C76EBF2E03882D00BC25DB /* 2025-06-15 AM 11_38_07_waypoints.gpx */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -34,6 +35,7 @@
 		09C76E882DF7954700BC25DB /* atlasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atlasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		09C76E922DF7954700BC25DB /* atlasUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atlasUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		09C76EBC2E012F1800BC25DB /* 2025-06-15 AM 11_38_07.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; name = "2025-06-15 AM 11_38_07.gpx"; path = "../../2025-06-15 AM 11_38_07.gpx"; sourceTree = "<group>"; };
+		09C76EBF2E03882D00BC25DB /* 2025-06-15 AM 11_38_07_waypoints.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "2025-06-15 AM 11_38_07_waypoints.gpx"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -99,6 +101,7 @@
 			isa = PBXGroup;
 			children = (
 				09C76EBC2E012F1800BC25DB /* 2025-06-15 AM 11_38_07.gpx */,
+				09C76EBF2E03882D00BC25DB /* 2025-06-15 AM 11_38_07_waypoints.gpx */,
 				09C76E7C2DF7954600BC25DB /* atlas */,
 				09C76E8B2DF7954700BC25DB /* atlasTests */,
 				09C76E952DF7954700BC25DB /* atlasUITests */,
@@ -243,6 +246,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				09C76EC02E03882D00BC25DB /* 2025-06-15 AM 11_38_07_waypoints.gpx in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

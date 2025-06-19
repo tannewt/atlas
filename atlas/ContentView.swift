@@ -384,11 +384,11 @@ struct ContentView: View {
                         if index > 0, let edgeLength = edge.length {
                             currentDistance += edgeLength * 1609.34 // Convert miles to meters
                             
-                            if let names = edge.names, !names.isEmpty {
+                            if let intersectingEdges = edge.endNode?.intersectingEdges, !intersectingEdges.isEmpty {
                                 let intersection = CrossStreetIntersection(
                                     distanceAhead: currentDistance,
-                                    streets: names.map { name in
-                                        CrossStreet(name: name, heading: Double.random(in: -90...90))
+                                    streets: intersectingEdges.map { intersecting in
+                                        CrossStreet(name: intersecting.names, heading: Double.random(in: -90...90))
                                     }
                                 )
                                 crossStreets.append(intersection)

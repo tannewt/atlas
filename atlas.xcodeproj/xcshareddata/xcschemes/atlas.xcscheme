@@ -76,7 +76,7 @@
          </BuildableReference>
       </BuildableProductRunnable>
       <LocationScenarioReference
-         identifier = "../../../../2025-06-15 AM 11_38_07.gpx"
+         identifier = "../../2025-06-15 AM 11_38_07_waypoints.gpx"
          referenceType = "0">
       </LocationScenarioReference>
    </LaunchAction>
