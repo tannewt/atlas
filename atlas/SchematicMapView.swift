@@ -114,8 +114,8 @@ struct CrossStreetIntersectionRowView: View {
         HStack {
             // Left labels
             VStack(alignment: .trailing, spacing: 2) {
-                ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.name) { street in
-                        Text(street.name)
+                ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.names) { street in
+                        Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
                 }
@@ -135,8 +135,8 @@ struct CrossStreetIntersectionRowView: View {
             
             // Right labels
             VStack(alignment: .leading, spacing: 2) {
-                ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.name) { street in
-                        Text(street.name)
+                ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.names) { street in
+                        Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
                 }
@@ -146,7 +146,7 @@ struct CrossStreetIntersectionRowView: View {
         }
     }
     
-    private func headingArrowIcon(for heading: Double) -> String {
+    private func headingArrowIcon(for heading: Int) -> String {
         switch heading {
         case -180..<(-135): return "arrow.down"
         case -135..<(-45): return "arrow.down.left"  
@@ -177,8 +177,8 @@ struct CrossStreetIntersectionColumnView: View {
         VStack {
             // Top labels
             HStack(alignment: .bottom, spacing: 2) {
-                ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.name) { street in
-                        Text(street.name)
+                ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.names) { street in
+                        Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
                 }
@@ -198,8 +198,8 @@ struct CrossStreetIntersectionColumnView: View {
             
             // Bottom labels
             HStack(alignment: .top, spacing: 2) {
-                ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.name) { street in
-                        Text(street.name)
+                ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.names) { street in
+                        Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
                 }
@@ -210,8 +210,8 @@ struct CrossStreetIntersectionColumnView: View {
 }
 
 struct CrossStreet {
-    let name: String
-    let heading: Double // degrees relative to main road (0 = straight ahead, -90 = left, 90 = right)
+    let names: [String]?
+    let heading: Int // degrees relative to main road (0 = straight ahead, -90 = left, 90 = right)
 }
 
 struct CrossStreetIntersection {
@@ -229,21 +229,21 @@ struct SchematicMapData {
             CrossStreetIntersection(
                 distanceAhead: 10,
                 streets: [
-                    CrossStreet(name: "15th Ave NE", heading: -90)
+                    CrossStreet(names: ["15th Ave NE"], heading: -90)
                 ]
             ),
             CrossStreetIntersection(
                 distanceAhead: 70,
                 streets: [
-                    CrossStreet(name: "Roosevelt Way NE", heading: -75),
-                    CrossStreet(name: "Roosevelt Way NE (south)", heading: 105)
+                    CrossStreet(names: ["Roosevelt Way NE"], heading: -75),
+                    CrossStreet(names: ["Roosevelt Way NE (south)"], heading: 105)
                 ]
             ),
             CrossStreetIntersection(
                 distanceAhead: 150,
                 streets: [
-                    CrossStreet(name: "12th Ave NE", heading: 80),
-                    CrossStreet(name: "Campus Pkwy NE", heading: -45)
+                    CrossStreet(names: ["12th Ave NE"], heading: 80),
+                    CrossStreet(names: ["Campus Pkwy NE"], heading: -45)
                 ]
             )
         ]

@@ -381,17 +381,28 @@ struct ContentView: View {
                     var currentDistance: Double = 0
                     
                     for (index, edge) in edges.enumerated() {
-                        if index > 0, let edgeLength = edge.length {
+                        if index >= response.matchedPoints?[-1].edgeIndex ?? 0, let edgeLength = edge.length {
                             currentDistance += edgeLength * 1609.34 // Convert miles to meters
                             
-                            if let intersectingEdges = edge.endNode?.intersectingEdges, !intersectingEdges.isEmpty {
-                                let intersection = CrossStreetIntersection(
-                                    distanceAhead: currentDistance,
-                                    streets: intersectingEdges.map { intersecting in
-                                        CrossStreet(name: intersecting.names, heading: Double.random(in: -90...90))
-                                    }
-                                )
-                                crossStreets.append(intersection)
+                            if let intersectingEdges = edge.endNode?.intersectingEdges, !intersectingEdges.isEmpty,
+                               let endHeading = edge.endHeading {
+                                let validIntersectingEdges = intersectingEdges.filter { intersecting in
+                                    intersecting.beginHeading != nil && 
+                                    (intersecting.driveability == .forward || intersecting.driveability == .both)
+                                }
+                                
+                                if !validIntersectingEdges.isEmpty {
+                                    let intersection = CrossStreetIntersection(
+                                        distanceAhead: currentDistance,
+                                        streets: validIntersectingEdges.map { intersecting in
+                                            let beginHeading = intersecting.beginHeading!
+                                            let headingDiff = endHeading - beginHeading + 360
+                                            let normalizedHeading = headingDiff % 360 - 180
+                                            return CrossStreet(names: intersecting.names, heading: normalizedHeading)
+                                        }
+                                    )
+                                    crossStreets.append(intersection)
+                                }
                             }
                         }
                     }
