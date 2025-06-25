@@ -28,10 +28,10 @@ struct SchematicDataConverter {
                                 let beginHeading = intersecting.beginHeading!
                                 let normalizedHeading = calculateRelativeHeading(endHeading: Double(endHeading), beginHeading: Double(beginHeading))
                                 
-                                // Check if any place route diverges at this intersecting edge
-                                let placeInfo = findPlaceRouteForEdge(intersecting.edgeId, placeRoutes: placeRoutes)
+                                // Check if any place routes diverge at this intersecting edge
+                                let placeInfos = findPlaceRoutesForEdge(intersecting.edgeId, placeRoutes: placeRoutes)
                                 
-                                return CrossStreet(names: intersecting.names, heading: normalizedHeading, sign: intersecting.sign, placeInfo: placeInfo)
+                                return CrossStreet(names: intersecting.names, heading: normalizedHeading, sign: intersecting.sign, placeInfos: placeInfos)
                             }
                         )
                         crossStreets.append(intersection)
@@ -45,7 +45,7 @@ struct SchematicDataConverter {
         
         return SchematicMapData(
             currentRoad: currentRoadName,
-            crossStreets: Array(crossStreets.prefix(5)), // Limit to 5 upcoming intersections
+            crossStreets: crossStreets,
             straightAheadPlaces: straightAheadPlaces
         )
     }
@@ -63,23 +63,27 @@ struct SchematicDataConverter {
         return Int(normalizedHeading)
     }
     
-    private static func findPlaceRouteForEdge(_ edgeId: Int64?, placeRoutes: [PlaceRouteInfo]) -> PlaceInfo? {
-        guard let edgeId = edgeId else { return nil }
+    private static func findPlaceRoutesForEdge(_ edgeId: Int64?, placeRoutes: [PlaceRouteInfo]) -> [PlaceInfo] {
+        guard let edgeId = edgeId else { return [] }
+        
+        var placeInfos: [PlaceInfo] = []
         
         for placeRoute in placeRoutes {
             // Check if this edge ID appears in any of the route legs
             for leg in placeRoute.routeResponse.trip.legs {
                 if leg.edgeIds.contains(edgeId) {
-                    return PlaceInfo(
+                    let placeInfo = PlaceInfo(
                         place: placeRoute.place,
                         distance: placeRoute.distance,
                         time: placeRoute.time
                     )
+                    placeInfos.append(placeInfo)
+                    break // Only add once per place
                 }
             }
         }
         
-        return nil
+        return placeInfos
     }
     
     private static func findStraightAheadPlaces(edges: [TraceEdge], placeRoutes: [PlaceRouteInfo]) -> [PlaceInfo] {
@@ -88,8 +92,16 @@ struct SchematicDataConverter {
         var straightAheadPlaces: [PlaceInfo] = []
         
         for placeRoute in placeRoutes {
+            print("Place Route: \(placeRoute.place.name)")
             // Check if the last trace edge is part of this place's route
             for leg in placeRoute.routeResponse.trip.legs {
+                // Print out edges ids and leg edge ids until they differ
+                for i in 0..<min(leg.edgeIds.count, edges.count) {
+                    print("Edge ID: \(edges[i].id) Leg Edge ID: \(leg.edgeIds[i])")
+                    if edges[i].id != leg.edgeIds[i] {
+                        break
+                    }
+                }
                 if leg.edgeIds.contains(lastEdgeId) {
                     let placeInfo = PlaceInfo(
                         place: placeRoute.place,
