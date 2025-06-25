@@ -331,25 +331,25 @@ struct PlaceInfoView: View {
     }
 }
 
-struct PlaceInfo {
+struct PlaceInfo: Equatable {
     let place: Place
     let distance: Double
     let time: Double
 }
 
-struct CrossStreet {
+struct CrossStreet: Equatable {
     let names: [String]?
     let heading: Int // degrees relative to main road (0 = straight ahead, -90 = left, 90 = right)
     let sign: EdgeSign?
     let placeInfo: PlaceInfo? // Information about place route that diverges at this cross street
 }
 
-struct CrossStreetIntersection {
+struct CrossStreetIntersection: Equatable {
     let distanceAhead: Double // in meters
     let streets: [CrossStreet] // multiple streets can intersect at the same point
 }
 
-struct SchematicMapData {
+struct SchematicMapData: Equatable {
     let currentRoad: String
     let crossStreets: [CrossStreetIntersection]
     let straightAheadPlaces: [PlaceInfo] // Places that continue straight ahead on current road

@@ -10,6 +10,7 @@ import Valhalla
 import ValhallaModels
 import ValhallaConfigModels
 import CoreLocation
+import UIKit
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
@@ -133,6 +134,12 @@ struct ContentView: View {
                     await updateRecentPointsText()
                 }
             }
+        }
+        .onChange(of: schematicData) { _, newValue in
+            UIApplication.shared.isIdleTimerDisabled = newValue != nil && !showDebugView
+        }
+        .onChange(of: showDebugView) { _, newValue in
+            UIApplication.shared.isIdleTimerDisabled = schematicData != nil && !newValue
         }
     }
     
