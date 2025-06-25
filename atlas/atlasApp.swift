@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct atlasApp: App {
@@ -13,5 +14,6 @@ struct atlasApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: [Place.self, TimeSlot.self])
     }
 }

@@ -74,6 +74,7 @@ struct ContentView: View {
     @State private var isLoading: Bool = false
     @State private var isWalkingMode: Bool = false
     @State private var showDebugView: Bool = false
+    @State private var showPlacesList: Bool = false
     @State private var schematicData: SchematicMapData?
     @StateObject private var locationManager = LocationManager()
     @StateObject private var navigationService = NavigationService()
@@ -92,6 +93,12 @@ struct ContentView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
+                        Button("Places") {
+                            showPlacesList = true
+                        }
+                        
+                        Divider()
+                        
                         Button(showDebugView ? "Show Map" : "Show Debug") {
                             showDebugView.toggle()
                         }
@@ -109,6 +116,9 @@ struct ContentView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showPlacesList) {
+            PlacesListView(currentLocation: locationManager.location)
         }
         .onAppear {
             Task {
