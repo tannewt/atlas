@@ -70,15 +70,13 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 struct ContentView: View {
-    @State private var routeResult: String = "Getting location..."
-    @State private var traceResult: String = "Waiting for GPS locations..."
     @State private var recentPointsText: String = "No GPS points yet..."
     @State private var isLoading: Bool = false
     @State private var isWalkingMode: Bool = false
     @State private var showDebugView: Bool = false
     @State private var schematicData: SchematicMapData?
     @StateObject private var locationManager = LocationManager()
-    @State private var valhalla: Valhalla?
+    @StateObject private var navigationService = NavigationService()
     
     var body: some View {
         NavigationView {
@@ -114,15 +112,14 @@ struct ContentView: View {
         }
         .onAppear {
             Task {
-                await initializeValhalla()
+                await navigationService.initialize()
             }
             
             locationManager.onLocationUpdate = { location in
                 Task {
-                    await testValhallaRoute(from: location)
-                    await testTraceAttributes()
+                    await navigationService.calculateRoute(from: location, isWalkingMode: isWalkingMode)
+                    await updateTraceAttributesAndSchematicData()
                     await updateRecentPointsText()
-                    await updateSchematicData()
                 }
             }
         }
@@ -172,7 +169,7 @@ struct ContentView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    Text(routeResult)
+                    Text(navigationService.routeResult)
                         .font(.system(.body, design: .monospaced))
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -183,7 +180,7 @@ struct ContentView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    Text(traceResult)
+                    Text(navigationService.traceResult)
                         .font(.system(.body, design: .monospaced))
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -216,17 +213,6 @@ struct ContentView: View {
         .padding()
     }
     
-    private func initializeValhalla() async {
-        do {
-            let config = try ValhallaConfig(tileExtractTar: Bundle.main.url(forResource: "valhalla_tiles", withExtension: "tar")!)
-            valhalla = try Valhalla(config)
-        } catch {
-            await MainActor.run {
-                routeResult = "Failed to initialize Valhalla: \(error.localizedDescription)"
-                traceResult = "Failed to initialize Valhalla: \(error.localizedDescription)"
-            }
-        }
-    }
     
     private func updateRecentPointsText() async {
         await MainActor.run {
@@ -237,185 +223,13 @@ struct ContentView: View {
         }
     }
     
-    private func testValhallaRoute(from location: CLLocation) async {
-        guard let valhalla = valhalla else {
-            await MainActor.run {
-                routeResult = "Valhalla not initialized"
-            }
-            return
-        }
-        
-        do {
-            
-            // Create a route request from current location to daycare
-            let request = RouteRequest(
-                locations: [
-                    RoutingWaypoint(lat: location.coordinate.latitude, lon: location.coordinate.longitude, radius: 100), // Current GPS location
-                    RoutingWaypoint(lat: 47.669553, lon: -122.363616, radius: 100)  // Daycare
-                ],
-                costing: isWalkingMode ? .pedestrian : .auto,
-                directionsOptions: DirectionsOptions(units: .mi)
-            )
-            
-            // Get the route
-            let response = try valhalla.route(request: request)
-            
-            await MainActor.run {
-                routeResult = """
-                Route to Daycare:
-                From: \(String(format: "%.6f", location.coordinate.latitude)), \(String(format: "%.6f", location.coordinate.longitude))
-                Status: \(response.trip.statusMessage ?? "Unknown")
-                Distance: \(response.trip.summary.length ?? 0) miles
-                Time: \(response.trip.summary.time ?? 0) seconds
-                Updated: \(Date().formatted(date: .omitted, time: .standard))
-                """
-            }
-            
-        } catch {
-            await MainActor.run {
-                routeResult = "Error: \(error.localizedDescription)"
-            }
-        }
-    }
     
-    private func testTraceAttributes() async {
-        guard let valhalla = valhalla else {
-            await MainActor.run {
-                traceResult = "Valhalla not initialized"
-            }
-            return
-        }
-        
-        do {
-            
-            // Use last 15 GPS locations instead of hardcoded waypoints
-            let waypoints = locationManager.recentLocations.map { location in
-                MapMatchWaypoint(lat: location.coordinate.latitude, lon: location.coordinate.longitude)
-            }
-            
-            // Need at least 2 locations for trace attributes
-            guard waypoints.count >= 2 else {
-                await MainActor.run {
-                    traceResult = "Need at least 2 GPS locations for trace attributes (\(waypoints.count)/2)"
-                }
-                return
-            }
-            
-            // Create trace attributes request
-            let request = TraceAttributesRequest(
-                shape: waypoints,
-                costing: isWalkingMode ? .pedestrian : .auto
-            )
-            
-            // Get trace attributes
-            let response = try valhalla.traceAttributes(request: request)
-            
-            await MainActor.run {
-                var result = "Trace Attributes (\(waypoints.count) locations):\n"
-                result += "Match confidence: \(String(format: "%.2f", response.confidenceScore ?? 0))\n"
-                result += "Matched points: \(response.matchedPoints?.count ?? 0)\n"
-                result += "Road segments: \(response.edges?.count ?? 0)\n\n"
-                
-                if let edges = response.edges?.prefix(3) {
-                    result += "Recent road segments:\n"
-                    for (index, edge) in edges.enumerated() {
-                        result += "\(index + 1). "
-                        if let names = edge.names, !names.isEmpty {
-                            result += "\(names.joined(separator: ", "))"
-                        } else {
-                            result += "Unnamed road"
-                        }
-                        
-                        if let length = edge.length {
-                            result += " (\(String(format: "%.2f", length)) mi)"
-                        }
-                        
-                        if let speed = edge.speed {
-                            result += " \(speed) mph"
-                        }
-                        
-                        if let speedLimit = edge.speedLimit {
-                            result += " (limit: \(speedLimit) mph)"
-                        }
-                        
-                        result += "\n"
-                    }
-                }
-                
-                result += "\nUpdated: \(Date().formatted(date: .omitted, time: .standard))"
-                traceResult = result
-            }
-            
-        } catch {
-            await MainActor.run {
-                traceResult = "Trace Error: \(error.localizedDescription)"
-            }
-        }
-    }
     
-    private func updateSchematicData() async {
-        guard let valhalla = valhalla else { return }
-        
-        do {
-            let waypoints = locationManager.recentLocations.map { location in
-                MapMatchWaypoint(lat: location.coordinate.latitude, lon: location.coordinate.longitude)
-            }
-            
-            guard waypoints.count >= 2 else { return }
-            
-            let request = TraceAttributesRequest(
-                shape: waypoints,
-                costing: isWalkingMode ? .pedestrian : .auto
-            )
-            
-            let response = try valhalla.traceAttributes(request: request)
-            
+    private func updateTraceAttributesAndSchematicData() async {
+        if let response = await navigationService.getTraceAttributes(for: locationManager.recentLocations, isWalkingMode: isWalkingMode) {
             await MainActor.run {
-                // Convert trace attributes to SchematicMapData
-                let currentRoadName = response.edges?.first?.names?.first ?? "Unknown Road"
-                
-                // Create cross streets from edges data
-                var crossStreets: [CrossStreetIntersection] = []
-                
-                if let edges = response.edges {
-                    var currentDistance: Double = 0
-                    
-                    for (index, edge) in edges.enumerated() {
-                        if index >= response.matchedPoints?.last?.edgeIndex ?? 0, let edgeLength = edge.length {
-                            currentDistance += edgeLength * 1609.34 // Convert miles to meters
-                            
-                            if let intersectingEdges = edge.endNode?.intersectingEdges, !intersectingEdges.isEmpty,
-                               let endHeading = edge.endHeading {
-                                let validIntersectingEdges = intersectingEdges.filter { intersecting in
-                                    intersecting.beginHeading != nil && 
-                                    (intersecting.driveability == .forward || intersecting.driveability == .both)
-                                }
-                                
-                                if !validIntersectingEdges.isEmpty {
-                                    let intersection = CrossStreetIntersection(
-                                        distanceAhead: currentDistance,
-                                        streets: validIntersectingEdges.map { intersecting in
-                                            let beginHeading = intersecting.beginHeading!
-                                            let headingDiff = endHeading - beginHeading + 360
-                                            let normalizedHeading = headingDiff % 360 - 180
-                                            return CrossStreet(names: intersecting.names, heading: normalizedHeading, sign: intersecting.sign)
-                                        }
-                                    )
-                                    crossStreets.append(intersection)
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                schematicData = SchematicMapData(
-                    currentRoad: currentRoadName,
-                    crossStreets: Array(crossStreets.prefix(5)) // Limit to 5 upcoming intersections
-                )
+                schematicData = SchematicDataConverter.convertTraceAttributesToSchematicData(response, isWalkingMode: isWalkingMode)
             }
-            
-        } catch {
-            // Silent fail for schematic data updates
         }
     }
 }
