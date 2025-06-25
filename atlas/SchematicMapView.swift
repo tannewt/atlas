@@ -1,4 +1,5 @@
 import SwiftUI
+import ValhallaModels
 
 struct SchematicMapView: View {
     let schematicData: SchematicMapData
@@ -115,9 +116,15 @@ struct CrossStreetIntersectionRowView: View {
             // Left labels
             VStack(alignment: .trailing, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.names) { street in
+                    VStack(alignment: .trailing, spacing: 2) {
                         Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
+                        
+                        if let sign = street.sign {
+                            SignView(sign: sign)
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
@@ -136,9 +143,15 @@ struct CrossStreetIntersectionRowView: View {
             // Right labels
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.names) { street in
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
+                        
+                        if let sign = street.sign {
+                            SignView(sign: sign)
+                        }
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,11 +189,17 @@ struct CrossStreetIntersectionColumnView: View {
     var body: some View {
         VStack {
             // Top labels
-            HStack(alignment: .bottom, spacing: 2) {
+            VStack(alignment: .center, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.names) { street in
+                    VStack(alignment: .center, spacing: 2) {
+                        if let sign = street.sign {
+                            SignView(sign: sign)
+                        }
+                        
                         Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
+                    }
                 }
             }
             .frame(maxHeight: .infinity, alignment: .bottom)
@@ -197,11 +216,17 @@ struct CrossStreetIntersectionColumnView: View {
             }
             
             // Bottom labels
-            HStack(alignment: .top, spacing: 2) {
+            VStack(alignment: .center, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading >= 0 }, id: \.names) { street in
+                    VStack(alignment: .center, spacing: 2) {
                         Text(street.names?.joined(separator: ", ") ?? "")
                             .font(.caption)
                             .fontWeight(.medium)
+                        
+                        if let sign = street.sign {
+                            SignView(sign: sign)
+                        }
+                    }
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
@@ -209,9 +234,48 @@ struct CrossStreetIntersectionColumnView: View {
     }
 }
 
+struct SignView: View {
+    let sign: EdgeSign
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            if let exitNumbers = sign.exitNumber, !exitNumbers.isEmpty {
+                Text(exitNumbers.joined(separator: " • "))
+                    .font(.caption2)
+                    .fontWeight(.bold)
+            }
+            
+            if let exitBranches = sign.exitBranch, !exitBranches.isEmpty {
+                Text(exitBranches.joined(separator: " • "))
+                    .font(.caption2)
+                    .fontWeight(.medium)
+            }
+            
+            if let exitTowards = sign.exitToward, !exitTowards.isEmpty {
+                Text(exitTowards.joined(separator: " • "))
+                    .font(.caption2)
+            }
+            
+            if let exitNames = sign.exitName, !exitNames.isEmpty {
+                Text(exitNames.joined(separator: " • "))
+                    .font(.caption2)
+                    .italic()
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color.green.opacity(0.8))
+        )
+        .foregroundColor(.white)
+    }
+}
+
 struct CrossStreet {
     let names: [String]?
     let heading: Int // degrees relative to main road (0 = straight ahead, -90 = left, 90 = right)
+    let sign: EdgeSign?
 }
 
 struct CrossStreetIntersection {
@@ -229,21 +293,21 @@ struct SchematicMapData {
             CrossStreetIntersection(
                 distanceAhead: 10,
                 streets: [
-                    CrossStreet(names: ["15th Ave NE"], heading: -90)
+                    CrossStreet(names: ["15th Ave NE"], heading: -90, sign: nil)
                 ]
             ),
             CrossStreetIntersection(
                 distanceAhead: 70,
                 streets: [
-                    CrossStreet(names: ["Roosevelt Way NE"], heading: -75),
-                    CrossStreet(names: ["Roosevelt Way NE (south)"], heading: 105)
+                    CrossStreet(names: ["Roosevelt Way NE"], heading: -75, sign: EdgeSign(exitNumber: ["12A"], exitBranch: ["I-5 North"], exitToward: ["Downtown"], exitName: nil)),
+                    CrossStreet(names: ["Roosevelt Way NE (south)"], heading: 105, sign: nil)
                 ]
             ),
             CrossStreetIntersection(
                 distanceAhead: 150,
                 streets: [
-                    CrossStreet(names: ["12th Ave NE"], heading: 80),
-                    CrossStreet(names: ["Campus Pkwy NE"], heading: -45)
+                    CrossStreet(names: ["12th Ave NE"], heading: 80, sign: nil),
+                    CrossStreet(names: ["Campus Pkwy NE"], heading: -45, sign: nil)
                 ]
             )
         ]

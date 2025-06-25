@@ -381,7 +381,7 @@ struct ContentView: View {
                     var currentDistance: Double = 0
                     
                     for (index, edge) in edges.enumerated() {
-                        if index >= response.matchedPoints?[-1].edgeIndex ?? 0, let edgeLength = edge.length {
+                        if index >= response.matchedPoints?.last?.edgeIndex ?? 0, let edgeLength = edge.length {
                             currentDistance += edgeLength * 1609.34 // Convert miles to meters
                             
                             if let intersectingEdges = edge.endNode?.intersectingEdges, !intersectingEdges.isEmpty,
@@ -398,7 +398,7 @@ struct ContentView: View {
                                             let beginHeading = intersecting.beginHeading!
                                             let headingDiff = endHeading - beginHeading + 360
                                             let normalizedHeading = headingDiff % 360 - 180
-                                            return CrossStreet(names: intersecting.names, heading: normalizedHeading)
+                                            return CrossStreet(names: intersecting.names, heading: normalizedHeading, sign: intersecting.sign)
                                         }
                                     )
                                     crossStreets.append(intersection)
