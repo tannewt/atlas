@@ -3,6 +3,7 @@ import ValhallaModels
 
 struct SchematicMapView: View {
     let schematicData: SchematicMapData
+    @State private var showAttribution = true
     
     var body: some View {
         GeometryReader { geometry in
@@ -58,6 +59,10 @@ struct SchematicMapView: View {
                     // Cross streets below current position
                     ForEach(schematicData.crossStreets.filter { $0.distanceAhead <= 0 }, id: \.distanceAhead) { intersection in
                         CrossStreetIntersectionRowView(intersection: intersection)
+                    }
+
+                    if showAttribution {
+                        Spacer().padding(.bottom, 16)
                     }
                 }
                 .padding()
@@ -124,6 +129,36 @@ struct SchematicMapView: View {
             }
         }
         .background(Color(.systemGray6))
+        .overlay(
+            // OpenStreetMap attribution overlay
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    if showAttribution {
+                        HStack(spacing: 8) {
+                            Text("Map data from OpenStreetMap")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                            
+                            Button(action: {
+                                showAttribution = false
+                            }) {
+                                Image(systemName: "xmark")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(.systemBackground).opacity(0.8))
+                        .cornerRadius(8)
+                        .padding(.trailing, 16)
+                        .padding(.bottom, 16)
+                    }
+                }
+            }
+        )
     }
 }
 
@@ -219,6 +254,10 @@ struct CrossStreetIntersectionColumnView: View {
             VStack(alignment: .center, spacing: 2) {
                 ForEach(intersection.streets.filter { $0.heading < 0 }, id: \.names) { street in
                     VStack(alignment: .center, spacing: 2) {
+                        ForEach(street.placeInfos, id: \.place.id) { placeInfo in
+                            PlaceInfoView(placeInfo: placeInfo)
+                        }
+
                         if let sign = street.sign {
                             SignView(sign: sign)
                         }

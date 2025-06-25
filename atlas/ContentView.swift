@@ -77,6 +77,7 @@ struct ContentView: View {
     @State private var isWalkingMode: Bool = false
     @State private var showDebugView: Bool = false
     @State private var showPlacesList: Bool = false
+    @State private var showMapDataInfo: Bool = false
     @State private var schematicData: SchematicMapData?
     @StateObject private var locationManager = LocationManager()
     @StateObject private var navigationService = NavigationService()
@@ -97,6 +98,10 @@ struct ContentView: View {
                     Menu {
                         Button("Places") {
                             showPlacesList = true
+                        }
+                        
+                        Button("Map Data") {
+                            showMapDataInfo = true
                         }
                         
                         Divider()
@@ -121,6 +126,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showPlacesList) {
             PlacesListView(currentLocation: locationManager.location)
+        }
+        .sheet(isPresented: $showMapDataInfo) {
+            MapDataInfoView()
         }
         .onAppear {
             Task {
@@ -246,7 +254,65 @@ struct ContentView: View {
     private func updateTraceAttributesAndSchematicData() async {
         if let response = await navigationService.getTraceAttributes(for: locationManager.recentLocations, isWalkingMode: isWalkingMode) {
             await MainActor.run {
+                if response.edges?.isEmpty ?? true {
+                    print(response)
+                    return
+                }
                 schematicData = SchematicDataConverter.convertTraceAttributesToSchematicData(response, isWalkingMode: isWalkingMode, placeRoutes: navigationService.placeRoutes)
+            }
+        }
+    }
+}
+
+struct MapDataInfoView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Map Data")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .padding(.top)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Map data from OpenStreetMap")
+                        .font(.headline)
+                    
+                    Text("This app uses map data provided by OpenStreetMap, a collaborative project to create a free editable map of the world.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                    
+                    Link("Visit OpenStreetMap.org", destination: URL(string: "https://www.openstreetmap.org")!)
+                        .font(.body)
+                        .foregroundColor(.blue)
+                }
+                
+                Divider()
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("License")
+                        .font(.headline)
+                    
+                    Text("OpenStreetMap data is available under the Open Database License (ODbL).")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                    
+                    Link("View ODbL License", destination: URL(string: "https://opendatacommons.org/licenses/odbl/")!)
+                        .font(.body)
+                        .foregroundColor(.blue)
+                }
+                
+                Spacer()
+            }
+            .padding()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
             }
         }
     }
