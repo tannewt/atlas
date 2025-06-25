@@ -70,6 +70,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 }
 
 struct ContentView: View {
+    @Environment(\.modelContext) private var modelContext
     @State private var recentPointsText: String = "No GPS points yet..."
     @State private var isLoading: Bool = false
     @State private var isWalkingMode: Bool = false
@@ -122,7 +123,7 @@ struct ContentView: View {
         }
         .onAppear {
             Task {
-                await navigationService.initialize()
+                await navigationService.initialize(modelContext: modelContext)
             }
             
             locationManager.onLocationUpdate = { location in
@@ -238,7 +239,7 @@ struct ContentView: View {
     private func updateTraceAttributesAndSchematicData() async {
         if let response = await navigationService.getTraceAttributes(for: locationManager.recentLocations, isWalkingMode: isWalkingMode) {
             await MainActor.run {
-                schematicData = SchematicDataConverter.convertTraceAttributesToSchematicData(response, isWalkingMode: isWalkingMode)
+                schematicData = SchematicDataConverter.convertTraceAttributesToSchematicData(response, isWalkingMode: isWalkingMode, placeRoutes: navigationService.placeRoutes)
             }
         }
     }

@@ -20,6 +20,16 @@ struct SchematicMapView: View {
                     
                     // Current position and main road
                     VStack {
+                        // Straight ahead places
+                        if !schematicData.straightAheadPlaces.isEmpty {
+                            VStack(spacing: 4) {
+                                ForEach(schematicData.straightAheadPlaces, id: \.place.id) { placeInfo in
+                                    PlaceInfoView(placeInfo: placeInfo)
+                                }
+                            }
+                            .padding(.bottom, 8)
+                        }
+                        
                         // Direction arrow
                         Image(systemName: "arrow.up")
                             .font(.title2)
@@ -81,7 +91,15 @@ struct SchematicMapView: View {
                                     .font(.title2)
                                     .foregroundColor(.blue)
                                 
-                                
+                                // Straight ahead places
+                                if !schematicData.straightAheadPlaces.isEmpty {
+                                    HStack(spacing: 4) {
+                                        ForEach(schematicData.straightAheadPlaces, id: \.place.id) { placeInfo in
+                                            PlaceInfoView(placeInfo: placeInfo)
+                                        }
+                                    }
+                                    .padding(.leading, 8)
+                                }
                             }
                             
                             HStack {
@@ -124,6 +142,10 @@ struct CrossStreetIntersectionRowView: View {
                         if let sign = street.sign {
                             SignView(sign: sign)
                         }
+                        
+                        if let placeInfo = street.placeInfo {
+                            PlaceInfoView(placeInfo: placeInfo)
+                        }
                     }
                 }
             }
@@ -150,6 +172,10 @@ struct CrossStreetIntersectionRowView: View {
                         
                         if let sign = street.sign {
                             SignView(sign: sign)
+                        }
+                        
+                        if let placeInfo = street.placeInfo {
+                            PlaceInfoView(placeInfo: placeInfo)
                         }
                     }
                 }
@@ -226,6 +252,10 @@ struct CrossStreetIntersectionColumnView: View {
                         if let sign = street.sign {
                             SignView(sign: sign)
                         }
+                        
+                        if let placeInfo = street.placeInfo {
+                            PlaceInfoView(placeInfo: placeInfo)
+                        }
                     }
                 }
             }
@@ -272,10 +302,46 @@ struct SignView: View {
     }
 }
 
+struct PlaceInfoView: View {
+    let placeInfo: PlaceInfo
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(placeInfo.place.emoji)
+                .font(.caption2)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(placeInfo.place.name)
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                HStack(spacing: 4) {
+                    Text("\(String(format: "%.1f", placeInfo.distance)) mi")
+                        .font(.caption2)
+                    Text("\(Int(placeInfo.time / 60)) min")
+                        .font(.caption2)
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.blue.opacity(0.8))
+        )
+        .foregroundColor(.white)
+    }
+}
+
+struct PlaceInfo {
+    let place: Place
+    let distance: Double
+    let time: Double
+}
+
 struct CrossStreet {
     let names: [String]?
     let heading: Int // degrees relative to main road (0 = straight ahead, -90 = left, 90 = right)
     let sign: EdgeSign?
+    let placeInfo: PlaceInfo? // Information about place route that diverges at this cross street
 }
 
 struct CrossStreetIntersection {
@@ -286,6 +352,7 @@ struct CrossStreetIntersection {
 struct SchematicMapData {
     let currentRoad: String
     let crossStreets: [CrossStreetIntersection]
+    let straightAheadPlaces: [PlaceInfo] // Places that continue straight ahead on current road
     
     static let preview = SchematicMapData(
         currentRoad: "NE 45th Street",
@@ -293,24 +360,25 @@ struct SchematicMapData {
             CrossStreetIntersection(
                 distanceAhead: 10,
                 streets: [
-                    CrossStreet(names: ["15th Ave NE"], heading: -90, sign: nil)
+                    CrossStreet(names: ["15th Ave NE"], heading: -90, sign: nil, placeInfo: nil)
                 ]
             ),
             CrossStreetIntersection(
                 distanceAhead: 70,
                 streets: [
-                    CrossStreet(names: ["Roosevelt Way NE"], heading: -75, sign: EdgeSign(exitNumber: ["12A"], exitBranch: ["I-5 North"], exitToward: ["Downtown"], exitName: nil)),
-                    CrossStreet(names: ["Roosevelt Way NE (south)"], heading: 105, sign: nil)
+                    CrossStreet(names: ["Roosevelt Way NE"], heading: -75, sign: EdgeSign(exitNumber: ["12A"], exitBranch: ["I-5 North"], exitToward: ["Downtown"], exitName: nil), placeInfo: nil),
+                    CrossStreet(names: ["Roosevelt Way NE (south)"], heading: 105, sign: nil, placeInfo: nil)
                 ]
             ),
             CrossStreetIntersection(
                 distanceAhead: 150,
                 streets: [
-                    CrossStreet(names: ["12th Ave NE"], heading: 80, sign: nil),
-                    CrossStreet(names: ["Campus Pkwy NE"], heading: -45, sign: nil)
+                    CrossStreet(names: ["12th Ave NE"], heading: 80, sign: nil, placeInfo: nil),
+                    CrossStreet(names: ["Campus Pkwy NE"], heading: -45, sign: nil, placeInfo: nil)
                 ]
             )
-        ]
+        ],
+        straightAheadPlaces: []
     )
 }
 
