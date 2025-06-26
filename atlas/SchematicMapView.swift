@@ -1,8 +1,11 @@
 import SwiftUI
 import ValhallaModels
+import CoreLocation
 
 struct SchematicMapView: View {
     let schematicData: SchematicMapData
+    let debug: Bool
+    let recentLocations: [CLLocation]
     @State private var showAttribution = true
     
     var body: some View {
@@ -54,6 +57,19 @@ struct SchematicMapView: View {
                         Text(schematicData.currentRoad)
                             .font(.headline)
                             .fontWeight(.semibold)
+                        
+                        // Debug GPS coordinates
+                        if debug {
+                            VStack(spacing: 2) {
+                                ForEach(Array(recentLocations.suffix(3).enumerated().reversed()), id: \.element.timestamp) { index, location in
+                                    Text("\(String(format: "%.6f", location.coordinate.latitude)), \(String(format: "%.6f", location.coordinate.longitude))")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .fontDesign(.monospaced)
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
                     }
                 
                     // Cross streets below current position
@@ -62,7 +78,7 @@ struct SchematicMapView: View {
                     }
 
                     if showAttribution {
-                        Spacer().padding(.bottom, 16)
+                        Spacer().padding(.bottom, 4)
                     }
                 }
                 .padding()
@@ -99,9 +115,23 @@ struct SchematicMapView: View {
                             }
                             
                             HStack {
-                                Text(schematicData.currentRoad)
-                                    .font(.headline)
-                                    .fontWeight(.semibold)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(schematicData.currentRoad)
+                                        .font(.headline)
+                                        .fontWeight(.semibold)
+                                    
+                                    // Debug GPS coordinates for landscape
+                                    if debug {
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            ForEach(Array(recentLocations.suffix(3).enumerated().reversed()), id: \.element.timestamp) { index, location in
+                                                Text("\(String(format: "%.6f", location.coordinate.latitude)), \(String(format: "%.6f", location.coordinate.longitude))")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
+                                                    .fontDesign(.monospaced)
+                                            }
+                                        }
+                                    }
+                                }
                                 Spacer()
                             }
                             .padding(.top, 8)
@@ -423,6 +453,6 @@ struct SchematicMapData: Equatable {
 }
 
 #Preview {
-    SchematicMapView(schematicData: SchematicMapData.preview)
+    SchematicMapView(schematicData: SchematicMapData.preview, debug: true, recentLocations: [])
         .padding()
 }

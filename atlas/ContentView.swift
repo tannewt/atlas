@@ -79,6 +79,7 @@ struct ContentView: View {
     @State private var showPlacesList: Bool = false
     @State private var showMapDataInfo: Bool = false
     @State private var schematicData: SchematicMapData?
+    @State private var debug: Bool = true
     @StateObject private var locationManager = LocationManager()
     @StateObject private var navigationService = NavigationService()
     
@@ -154,7 +155,7 @@ struct ContentView: View {
     private var mainView: some View {
         VStack(spacing: 10) {
             if let schematicData = schematicData {
-                SchematicMapView(schematicData: schematicData)
+                SchematicMapView(schematicData: schematicData, debug: debug, recentLocations: locationManager.recentLocations)
                     .frame(maxHeight: .infinity)
             } else {
                 VStack {
