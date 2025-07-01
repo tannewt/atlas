@@ -1,6 +1,7 @@
 import SwiftUI
 import ValhallaModels
 import CoreLocation
+import AtlasLibrary
 
 struct SchematicMapView: View {
     let schematicData: SchematicMapData

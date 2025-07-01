@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import CoreLocation
+import AtlasLibrary
 
 struct PlacesListView: View {
     @Environment(\.modelContext) private var modelContext

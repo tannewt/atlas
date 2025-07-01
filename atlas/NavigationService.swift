@@ -4,6 +4,7 @@ import Valhalla
 import ValhallaModels
 import ValhallaConfigModels
 import SwiftData
+import AtlasLibrary
 
 struct PlaceRouteInfo {
     let place: Place

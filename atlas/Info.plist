@@ -4,5 +4,35 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs location to provide turn by turn directions to daycare.</string>
+	<key>NSUserActivityTypes</key>
+	<array>
+		<string>NSUserActivityTypeBrowsingWeb</string>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Text</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>atlas.text-import</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>atlas</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

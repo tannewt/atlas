@@ -11,6 +11,7 @@ import ValhallaModels
 import ValhallaConfigModels
 import CoreLocation
 import UIKit
+import AtlasLibrary
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
@@ -78,6 +79,8 @@ struct ContentView: View {
     @State private var showDebugView: Bool = false
     @State private var showPlacesList: Bool = false
     @State private var showMapDataInfo: Bool = false
+    @State private var showPlaceEdit: Bool = false
+    @State private var sharedPlaceData: (latitude: Double, longitude: Double, name: String?)?
     @State private var schematicData: SchematicMapData?
     @State private var debug: Bool = true
     @StateObject private var locationManager = LocationManager()
@@ -100,6 +103,12 @@ struct ContentView: View {
                         Button("Places") {
                             showPlacesList = true
                         }
+                        
+                        Button("Import from Text") {
+                            // This will be handled by share sheet now
+                        }
+                        
+                        Divider()
                         
                         Button("Map Data") {
                             showMapDataInfo = true
@@ -131,6 +140,16 @@ struct ContentView: View {
         .sheet(isPresented: $showMapDataInfo) {
             MapDataInfoView()
         }
+        .sheet(isPresented: $showPlaceEdit) {
+            if let sharedData = sharedPlaceData {
+                PlaceEditViewWithPrefilledData(
+                    latitude: sharedData.latitude,
+                    longitude: sharedData.longitude,
+                    name: sharedData.name,
+                    currentLocation: locationManager.location
+                )
+            }
+        }
         .onAppear {
             Task {
                 await navigationService.initialize(modelContext: modelContext)
@@ -143,6 +162,21 @@ struct ContentView: View {
                     await updateTraceAttributesAndSchematicData()
                     await updateRecentPointsText()
                 }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .incomingURL)) { notification in
+            if let url = notification.object as? URL {
+                handleIncomingURL(url)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .incomingText)) { notification in
+            if let text = notification.object as? String {
+                handleIncomingText(text)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .incomingLocation)) { notification in
+            if let locationData = notification.object as? (latitude: Double, longitude: Double, name: String?) {
+                handleIncomingLocation(locationData)
             }
         }
         .onChange(of: schematicData) { _, newValue in
@@ -275,6 +309,37 @@ struct ContentView: View {
             }
         }
     }
+    
+    private func handleIncomingURL(_ url: URL) {
+        if let decodedLocation = GE0URLDecoder.decode(url: url.absoluteString) {
+            sharedPlaceData = (
+                latitude: decodedLocation.latitude,
+                longitude: decodedLocation.longitude,
+                name: decodedLocation.name
+            )
+            showPlaceEdit = true
+        }
+    }
+    
+    private func handleIncomingText(_ text: String) {
+        if let sharedData = SharedTextParser.parseSharedText(text) {
+            sharedPlaceData = (
+                latitude: sharedData.latitude,
+                longitude: sharedData.longitude,
+                name: sharedData.name
+            )
+            showPlaceEdit = true
+        }
+    }
+    
+    private func handleIncomingLocation(_ locationData: (latitude: Double, longitude: Double, name: String?)) {
+        sharedPlaceData = (
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            name: locationData.name
+        )
+        showPlaceEdit = true
+    }
 }
 
 struct MapDataInfoView: View {
@@ -328,6 +393,235 @@ struct MapDataInfoView: View {
                 }
             }
         }
+    }
+}
+
+struct PlaceEditViewWithPrefilledData: View {
+    let latitude: Double
+    let longitude: Double
+    let name: String?
+    let currentLocation: CLLocation?
+    
+    var body: some View {
+        PlaceEditViewWithData(
+            place: nil,
+            currentLocation: currentLocation,
+            prefilledLatitude: latitude,
+            prefilledLongitude: longitude,
+            prefilledName: name ?? ""
+        )
+    }
+}
+
+struct PlaceEditViewWithData: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    
+    let place: Place?
+    let currentLocation: CLLocation?
+    let prefilledLatitude: Double?
+    let prefilledLongitude: Double?
+    let prefilledName: String?
+    
+    @State private var emoji: String = "📍"
+    @State private var name: String = ""
+    @State private var latitude: Double = 0.0
+    @State private var longitude: Double = 0.0
+    @State private var showPolicy: ShowPolicy = .nearby
+    @State private var nearbyDistance: Double = 0.1
+    @State private var timeSlots: [TimeSlot] = []
+    @State private var showingTimeSlotEditor = false
+    
+    private var isEditing: Bool {
+        place != nil
+    }
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Basic Information") {
+                    HStack {
+                        Text("Emoji")
+                        Spacer()
+                        TextField("🏠", text: $emoji)
+                            .multilineTextAlignment(.trailing)
+                            .font(.title2)
+                    }
+                    
+                    TextField("Name", text: $name)
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Location")
+                            .font(.headline)
+                        
+                        HStack {
+                            Text("Lat:")
+                            TextField("0.0", value: $latitude, format: .number)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        
+                        HStack {
+                            Text("Lon:")
+                            TextField("0.0", value: $longitude, format: .number)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        
+                        if currentLocation != nil {
+                            Button("Use Current Location") {
+                                if let currentLocation = currentLocation {
+                                    latitude = currentLocation.coordinate.latitude
+                                    longitude = currentLocation.coordinate.longitude
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                
+                Section("Visibility") {
+                    Picker("Show Policy", selection: $showPolicy) {
+                        ForEach(ShowPolicy.allCases, id: \.self) { policy in
+                            Text(policy.displayName).tag(policy)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                    
+                    if showPolicy == .nearby {
+                        HStack {
+                            Text("Distance (miles)")
+                            Spacer()
+                            TextField("0.1", value: $nearbyDistance, format: .number)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .frame(width: 80)
+                        }
+                    }
+                    
+                    if showPolicy == .atCertainTimes {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Time Slots")
+                                    .font(.headline)
+                                Spacer()
+                                Button("Add") {
+                                    showingTimeSlotEditor = true
+                                }
+                            }
+                            
+                            ForEach(timeSlots, id: \.id) { timeSlot in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(timeSlot.name)
+                                        .font(.headline)
+                                    HStack {
+                                        Text(timeSlot.dayNames)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Spacer()
+                                        Text(timeSlot.timeRange)
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 2)
+                            }
+                            .onDelete(perform: deleteTimeSlots)
+                        }
+                    }
+                }
+            }
+            .navigationTitle(isEditing ? "Edit Place" : "Add Shared Place")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        savePlace()
+                    }
+                    .disabled(name.isEmpty || emoji.isEmpty)
+                }
+            }
+            .sheet(isPresented: $showingTimeSlotEditor) {
+                TimeSlotEditView { timeSlot in
+                    timeSlots.append(timeSlot)
+                }
+            }
+        }
+        .onAppear {
+            loadPlaceData()
+        }
+    }
+    
+    private func loadPlaceData() {
+        if let place = place {
+            emoji = place.emoji
+            name = place.name
+            latitude = place.latitude
+            longitude = place.longitude
+            showPolicy = place.showPolicy
+            nearbyDistance = place.nearbyDistance
+            timeSlots = place.timeSlots
+        } else {
+            // Use prefilled data for shared URLs
+            if let prefilledLatitude = prefilledLatitude {
+                latitude = prefilledLatitude
+            } else if let currentLocation = currentLocation {
+                latitude = currentLocation.coordinate.latitude
+            }
+            
+            if let prefilledLongitude = prefilledLongitude {
+                longitude = prefilledLongitude
+            } else if let currentLocation = currentLocation {
+                longitude = currentLocation.coordinate.longitude
+            }
+            
+            if let prefilledName = prefilledName, !prefilledName.isEmpty {
+                name = prefilledName
+            }
+        }
+    }
+    
+    private func savePlace() {
+        if let existingPlace = place {
+            existingPlace.emoji = emoji
+            existingPlace.name = name
+            existingPlace.latitude = latitude
+            existingPlace.longitude = longitude
+            existingPlace.showPolicy = showPolicy
+            existingPlace.nearbyDistance = nearbyDistance
+            
+            existingPlace.timeSlots.removeAll()
+            for timeSlot in timeSlots {
+                timeSlot.place = existingPlace
+                existingPlace.timeSlots.append(timeSlot)
+            }
+        } else {
+            let newPlace = Place(
+                emoji: emoji,
+                name: name,
+                latitude: latitude,
+                longitude: longitude,
+                showPolicy: showPolicy,
+                nearbyDistance: nearbyDistance
+            )
+            
+            for timeSlot in timeSlots {
+                timeSlot.place = newPlace
+                newPlace.timeSlots.append(timeSlot)
+            }
+            
+            modelContext.insert(newPlace)
+        }
+        
+        dismiss()
+    }
+    
+    private func deleteTimeSlots(offsets: IndexSet) {
+        timeSlots.remove(atOffsets: offsets)
     }
 }
 
