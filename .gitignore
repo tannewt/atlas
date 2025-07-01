@@ -1,2 +1,19 @@
 **/*tiles.tar
 
+# Workspace and user-specific files
+*.xcworkspace
+.DS_Store
+**/xcuserdata/
+
+# Logo assets (temporary)
+logo_*.svg
+atlas_logo_1024.png
+
+# GPX files
+gpx/
+
+# Workspace files
+*.code-workspace
+
+# GeoJSON data files
+*.geojson

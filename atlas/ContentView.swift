@@ -139,6 +139,7 @@ struct ContentView: View {
             locationManager.onLocationUpdate = { location in
                 Task {
                     await navigationService.calculateRoute(from: location, isWalkingMode: isWalkingMode)
+                    await navigationService.calculateMatrixToClosestToilets(from: location, isWalkingMode: isWalkingMode)
                     await updateTraceAttributesAndSchematicData()
                     await updateRecentPointsText()
                 }
@@ -212,6 +213,17 @@ struct ContentView: View {
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    
+                    Text("Matrix Results (Closest Toilets):")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    
+                    Text(navigationService.matrixResult)
+                        .font(.system(.body, design: .monospaced))
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.orange.opacity(0.1))
                         .cornerRadius(8)
                     
                     HStack {
