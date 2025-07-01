@@ -29,6 +29,7 @@ struct ToiletProperties: Codable {
     let description: String?
     let name: String?
     let operatorName: String?
+    let containingAreaName: String?
     
     private enum CodingKeys: String, CodingKey {
         case amenity
@@ -36,6 +37,7 @@ struct ToiletProperties: Codable {
         case osmType = "osm_type"
         case access, fee, wheelchair, description, name
         case operatorName = "operator"
+        case containingAreaName = "containing_area_name"
     }
 }
 

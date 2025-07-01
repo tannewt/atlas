@@ -265,7 +265,7 @@ class NavigationService: ObservableObject {
                 for (index, distance) in distances.enumerated() {
                     let toilet = sortedToilets[index]
                     let properties = toilet.properties
-                    let name = properties.name ?? "Toilet"
+                    let name = properties.name ?? properties.containingAreaName ?? "Toilet"
                     let access = properties.access ?? "unknown"
                     let wheelchairAccess = properties.wheelchair ?? "unknown"
                     
@@ -305,7 +305,7 @@ class NavigationService: ObservableObject {
                         // Convert toilet to a temporary Place for consistency with existing PlaceRouteInfo system
                         let toiletAsPlace = Place(
                             emoji: "🚽",
-                            name: nearestByRouting.0.properties.name ?? "Nearest Toilet",
+                            name: nearestByRouting.0.properties.name ?? nearestByRouting.0.properties.containingAreaName ?? "Nearest Toilet",
                             latitude: nearestByRouting.0.coordinate.latitude,
                             longitude: nearestByRouting.0.coordinate.longitude,
                             showPolicy: .always,
@@ -358,7 +358,7 @@ class NavigationService: ObservableObject {
                     "coordinates": [toilet.coordinate.longitude, toilet.coordinate.latitude]
                 ],
                 "properties": [
-                    "name": toilet.properties.name ?? "Toilet \(index + 1)",
+                    "name": toilet.properties.name ?? toilet.properties.containingAreaName ?? "Toilet \(index + 1)",
                     "type": "toilet",
                     "access": toilet.properties.access ?? "unknown",
                     "wheelchair": toilet.properties.wheelchair ?? "unknown",
